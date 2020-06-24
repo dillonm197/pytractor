@@ -201,17 +201,7 @@ class WebDriverMixin(object):
         return elements
 
     def get(self, url):
-        super(WebDriverMixin, self).get('about:blank')
-        full_url = urljoin(str(self._base_url), str(url))
-        self.execute_script(
-            """
-            window.name = "{}" + window.name;
-            window.location.replace("{}");
-            """.format(DEFER_LABEL, full_url)
-        )
-        wait = WebDriverWait(self, self._test_timeout)
-        wait.until_not(self._location_equals, 'about:blank')
-
+        super(WebDriverMixin, self).get(urljoin(str(self._base_url), str(url)))
         if not self.ignore_synchronization:
             test_result = self._test_for_angular()
             if 'message' in test_result:

@@ -17,18 +17,65 @@ Selenium webdrivers with added angular.js awareness.
 """
 
 from selenium import webdriver as selenium_webdriver
+from selenium.webdriver import Android, BlackBerry, Chrome, Edge, Firefox, Ie, Opera, PhantomJS, Remote, Safari, \
+    WebKitGTK
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from .mixins import WebDriverMixin
 
-module_dict = globals()  # pylint: disable=invalid-name
-__all__ = []
 
-# build classes derived from selenium webdrivers and our WebDriverMixin
-for name in dir(selenium_webdriver):
-    export = getattr(selenium_webdriver, name)
-    if isinstance(export, type) and issubclass(export, WebDriver):
-        module_dict[name] = type(name, (WebDriverMixin, export), {})
-        __all__.append(name)
+class Android(WebDriverMixin, Android):
+    pass
 
-__all__ = tuple(__all__)
+
+class BlackBerry(WebDriverMixin, BlackBerry):
+    pass
+
+
+class Chrome(WebDriverMixin, Chrome):
+    pass
+
+
+class Edge(WebDriverMixin, Edge):
+    pass
+
+
+class Firefox(WebDriverMixin, Firefox):
+    pass
+
+
+class Ie(WebDriverMixin, Ie):
+    pass
+
+
+class Opera(WebDriverMixin, Opera):
+    pass
+
+
+class PhantomJS(WebDriverMixin, PhantomJS):
+    pass
+
+
+class Remote(WebDriverMixin, Remote):
+    pass
+
+
+class Safari(WebDriverMixin, Safari):
+    pass
+
+
+class WebKitGTK(WebDriverMixin, WebKitGTK):
+    pass
+
+
+__all__ = ['Android',
+           'BlackBerry',
+           'Chrome',
+           'Edge',
+           'Firefox',
+           'Ie',
+           'Opera',
+           'PhantomJS',
+           'Remote',
+           'Safari',
+           'WebKitGTK']
