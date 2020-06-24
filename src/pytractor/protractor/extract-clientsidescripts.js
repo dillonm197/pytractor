@@ -4,11 +4,11 @@
 
   var EXTRACTED_DIR, client_side_scripts, fs, name, script;
 
-  EXTRACTED_DIR = 'extracted';
+  EXTRACTED_DIR = './extracted';
 
   fs = require('fs');
 
-  client_side_scripts = require('./node_modules/protractor/lib/clientsidescripts.js');
+  client_side_scripts = require('./clientsidescripts.js');
 
   for (name in client_side_scripts) {
     script = client_side_scripts[name];

@@ -1,4 +1,4 @@
-try { return (function (optionsDescriptor, using) {
+try { return (function(optionsDescriptor, using) {
   using = using || document;
 
   var prefixes = ['ng-', 'ng_', 'data-ng-', 'x-ng-', 'ng\\:'];

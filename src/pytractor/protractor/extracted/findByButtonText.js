@@ -1,4 +1,4 @@
-try { return (function (searchText, using) {
+try { return (function(searchText, using) {
   using = using || document;
 
   var elements = using.querySelectorAll('button, input[type="button"], input[type="submit"]');

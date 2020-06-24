@@ -1,28 +1,185 @@
-window.clientSideScripts = {waitForAngular: function (rootSelector, callback) {
-  var el = document.querySelector(rootSelector);
+window.clientSideScripts = {waitForAngular: function anonymous(
+) {
+function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
+  }
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
+  }
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
+};  return (function(rootSelector, callback) {
 
   try {
-    if (!window.angular) {
-      throw new Error('angular could not be found on the window');
-    }
-    if (angular.getTestability) {
-      angular.getTestability(el).whenStable(callback);
-    } else {
-      if (!angular.element(el).injector()) {
-        throw new Error('root element (' + rootSelector + ') has no injector.' +
-           ' this may mean it is not inside ng-app.');
+    // Wait for both angular1 testability and angular2 testability.
+
+    var testCallback = callback;
+
+    // Wait for angular1 testability first and run waitForAngular2 as a callback
+    var waitForAngular1 = function(callback) {
+
+      if (window.angular) {
+        var hooks = getNg1Hooks(rootSelector);
+        if (!hooks){
+          callback();  // not an angular1 app
+        }
+        else{
+          if (hooks.$$testability) {
+            hooks.$$testability.whenStable(callback);
+          } else if (hooks.$injector) {
+            hooks.$injector.get('$browser')
+                .notifyWhenNoOutstandingRequests(callback);
+          } else if (!rootSelector) {
+            throw new Error(
+                'Could not automatically find injector on page: "' +
+                window.location.toString() + '".  Consider using config.rootEl');
+          } else {
+            throw new Error(
+                'root element (' + rootSelector + ') has no injector.' +
+                ' this may mean it is not inside ng-app.');
+          }
+        }
       }
-      angular.element(el).injector().get('$browser').
-          notifyWhenNoOutstandingRequests(callback);
-    }
+      else {callback();}  // not an angular1 app
+    };
+
+    // Wait for Angular2 testability and then run test callback
+    var waitForAngular2 = function() {
+      if (window.getAngularTestability) {
+        if (rootSelector) {
+          var testability = null;
+          var el = document.querySelector(rootSelector);
+          try{
+            testability = window.getAngularTestability(el);
+          }
+          catch(e){}
+          if (testability) {
+            testability.whenStable(testCallback);
+            return;
+          }
+        }
+
+        // Didn't specify root element or testability could not be found
+        // by rootSelector. This may happen in a hybrid app, which could have
+        // more than one root.
+        var testabilities = window.getAllAngularTestabilities();
+        var count = testabilities.length;
+
+        // No angular2 testability, this happens when
+        // going to a hybrid page and going back to a pure angular1 page
+        if (count === 0) {
+          testCallback();
+          return;
+        }
+
+        var decrement = function() {
+          count--;
+          if (count === 0) {
+            testCallback();
+          }
+        };
+        testabilities.forEach(function(testability) {
+          testability.whenStable(decrement);
+        });
+
+      }
+      else {testCallback();}  // not an angular2 app
+    };
+
+    if (!(window.angular) && !(window.getAngularTestability)) {
+      // no testability hook
+      throw new Error(
+          'both angularJS testability and angular testability are undefined.' +
+          '  This could be either ' +
+          'because this is a non-angular page or because your test involves ' +
+          'client-side navigation, which can interfere with Protractor\'s ' +
+          'bootstrapping.  See http://git.io/v4gXM for details');
+    } else {waitForAngular1(waitForAngular2);}  // Wait for angular1 and angular2
+                                                // Testability hooks sequentially
+
   } catch (err) {
     callback(err.message);
   }
-}, findBindings: function (binding, exactMatch, using, rootSelector) {
-  var root = document.querySelector(rootSelector || 'body');
+
+}).apply(this, arguments);
+}, findBindings: function anonymous(
+) {
+function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
+  }
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
+  }
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
+};  return (function(binding, exactMatch, using, rootSelector) {
   using = using || document;
   if (angular.getTestability) {
-    return angular.getTestability(root).
+    return getNg1Hooks(rootSelector).$$testability.
         findBindings(using, binding, exactMatch);
   }
   var bindings = using.getElementsByClassName('ng-binding');
@@ -48,7 +205,9 @@ window.clientSideScripts = {waitForAngular: function (rootSelector, callback) {
     }
   }
   return matches; /* Return the whole array for webdriver.findElements. */
-}, findRepeaterRows: function anonymous() {
+}).apply(this, arguments);
+}, findRepeaterRows: function anonymous(
+) {
 function repeaterMatch(ngRepeat, repeater, exact) {
   if (exact) {
     return ngRepeat.split(' track by ')[0].split(' as ')[0].split('|')[0].
@@ -83,7 +242,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
         var elem = repeatElems[i];
         var row = [];
         while (elem.nodeType != 8 ||
-            !repeaterMatch(elem.nodeValue, repeater, exact)) {
+            !repeaterMatch(elem.nodeValue, repeater)) {
           if (elem.nodeType == 1) {
             row.push(elem);
           }
@@ -96,7 +255,8 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   var row = rows[index] || [], multiRow = multiRows[index] || [];
   return [].concat(row, multiRow);
 }).apply(this, arguments);
-}, findAllRepeaterRows: function anonymous() {
+}, findAllRepeaterRows: function anonymous(
+) {
 function repeaterMatch(ngRepeat, repeater, exact) {
   if (exact) {
     return ngRepeat.split(' track by ')[0].split(' as ')[0].split('|')[0].
@@ -127,7 +287,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
       if (repeaterMatch(repeatElems[i].getAttribute(attr), repeater, exact)) {
         var elem = repeatElems[i];
         while (elem.nodeType != 8 ||
-            !repeaterMatch(elem.nodeValue, repeater, exact)) {
+            !repeaterMatch(elem.nodeValue, repeater)) {
           if (elem.nodeType == 1) {
             rows.push(elem);
           }
@@ -138,7 +298,8 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   }
   return rows;
 }).apply(this, arguments);
-}, findRepeaterElement: function anonymous() {
+}, findRepeaterElement: function anonymous(
+) {
 function repeaterMatch(ngRepeat, repeater, exact) {
   if (exact) {
     return ngRepeat.split(' track by ')[0].split(' as ')[0].split('|')[0].
@@ -146,9 +307,48 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   } else {
     return ngRepeat.indexOf(repeater) != -1;
   }
+};function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
+  }
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
+  }
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
 };  return (function findRepeaterElement(repeater, exact, index, binding, using, rootSelector) {
   var matches = [];
-  var root = document.querySelector(rootSelector || 'body');
   using = using || document;
 
   var rows = [];
@@ -175,7 +375,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
         var elem = repeatElems[i];
         var row = [];
         while (elem.nodeType != 8 || (elem.nodeValue &&
-            !repeaterMatch(elem.nodeValue, repeater, exact))) {
+            !repeaterMatch(elem.nodeValue, repeater))) {
           if (elem.nodeType == 1) {
             row.push(elem);
           }
@@ -192,7 +392,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
     if (angular.getTestability) {
       matches.push.apply(
           matches,
-          angular.getTestability(root).findBindings(row, binding));
+          getNg1Hooks(rootSelector).$$testability.findBindings(row, binding));
     } else {
       if (row.className.indexOf('ng-binding') != -1) {
         bindings.push(row);
@@ -209,7 +409,8 @@ function repeaterMatch(ngRepeat, repeater, exact) {
       if (angular.getTestability) {
         matches.push.apply(
             matches,
-            angular.getTestability(root).findBindings(rowElem, binding));
+            getNg1Hooks(rootSelector).$$testability.findBindings(rowElem,
+                binding));
       } else {
         if (rowElem.className.indexOf('ng-binding') != -1) {
           bindings.push(rowElem);
@@ -232,7 +433,8 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   }
   return matches;
 }).apply(this, arguments);
-}, findRepeaterColumn: function anonymous() {
+}, findRepeaterColumn: function anonymous(
+) {
 function repeaterMatch(ngRepeat, repeater, exact) {
   if (exact) {
     return ngRepeat.split(' track by ')[0].split(' as ')[0].split('|')[0].
@@ -240,9 +442,48 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   } else {
     return ngRepeat.indexOf(repeater) != -1;
   }
+};function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
+  }
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
+  }
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
 };  return (function findRepeaterColumn(repeater, exact, binding, using, rootSelector) {
   var matches = [];
-  var root = document.querySelector(rootSelector || 'body');
   using = using || document;
 
   var rows = [];
@@ -269,7 +510,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
         var elem = repeatElems[i];
         var row = [];
         while (elem.nodeType != 8 || (elem.nodeValue &&
-            !repeaterMatch(elem.nodeValue, repeater, exact))) {
+            !repeaterMatch(elem.nodeValue, repeater))) {
           if (elem.nodeType == 1) {
             row.push(elem);
           }
@@ -284,7 +525,8 @@ function repeaterMatch(ngRepeat, repeater, exact) {
     if (angular.getTestability) {
       matches.push.apply(
           matches,
-          angular.getTestability(root).findBindings(rows[i], binding));
+          getNg1Hooks(rootSelector).$$testability.findBindings(rows[i],
+              binding));
     } else {
       if (rows[i].className.indexOf('ng-binding') != -1) {
         bindings.push(rows[i]);
@@ -300,7 +542,8 @@ function repeaterMatch(ngRepeat, repeater, exact) {
       if (angular.getTestability) {
         matches.push.apply(
             matches,
-            angular.getTestability(root).findBindings(multiRows[i][j], binding));
+            getNg1Hooks(rootSelector).$$testability.findBindings(
+                multiRows[i][j], binding));
       } else {
         var elem = multiRows[i][j];
         if (elem.className.indexOf('ng-binding') != -1) {
@@ -324,12 +567,53 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   }
   return matches;
 }).apply(this, arguments);
-}, findByModel: function (model, using, rootSelector) {
-  var root = document.querySelector(rootSelector || 'body');
+}, findByModel: function anonymous(
+) {
+function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
+  }
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
+  }
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
+};  return (function(model, using, rootSelector) {
   using = using || document;
 
   if (angular.getTestability) {
-    return angular.getTestability(root).
+    return getNg1Hooks(rootSelector).$$testability.
         findModels(using, model, true);
   }
   var prefixes = ['ng-', 'ng_', 'data-ng-', 'x-ng-', 'ng\\:'];
@@ -340,7 +624,8 @@ function repeaterMatch(ngRepeat, repeater, exact) {
       return elements;
     }
   }
-}, findByOptions: function (optionsDescriptor, using) {
+}).apply(this, arguments);
+}, findByOptions: function(optionsDescriptor, using) {
   using = using || document;
 
   var prefixes = ['ng-', 'ng_', 'data-ng-', 'x-ng-', 'ng\\:'];
@@ -351,7 +636,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
       return elements;
     }
   }
-}, findByButtonText: function (searchText, using) {
+}, findByButtonText: function(searchText, using) {
   using = using || document;
 
   var elements = using.querySelectorAll('button, input[type="button"], input[type="submit"]');
@@ -370,7 +655,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   }
 
   return matches;
-}, findByPartialButtonText: function (searchText, using) {
+}, findByPartialButtonText: function(searchText, using) {
   using = using || document;
 
   var elements = using.querySelectorAll('button, input[type="button"], input[type="submit"]');
@@ -389,46 +674,77 @@ function repeaterMatch(ngRepeat, repeater, exact) {
   }
 
   return matches;
-}, findByCssContainingText: function (cssSelector, searchText, using) {
+}, findByCssContainingText: function(cssSelector, searchText, using) {
   using = using || document;
 
+  if (searchText.indexOf('__REGEXP__') === 0) {
+    var match = searchText.split('__REGEXP__')[1].match(/\/(.*)\/(.*)?/);
+    searchText = new RegExp(match[1], match[2] || '');
+  }
   var elements = using.querySelectorAll(cssSelector);
   var matches = [];
   for (var i = 0; i < elements.length; ++i) {
     var element = elements[i];
     var elementText = element.textContent || element.innerText || '';
-    if (elementText.indexOf(searchText) > -1) {
+    var elementMatches = searchText instanceof RegExp ?
+        searchText.test(elementText) :
+        elementText.indexOf(searchText) > -1;
+
+    if (elementMatches) {
       matches.push(element);
     }
   }
   return matches;
-}, testForAngular: function (attempts, asyncCallback) {
+}, testForAngular: function(attempts, ng12Hybrid, asyncCallback) {
   var callback = function(args) {
     setTimeout(function() {
       asyncCallback(args);
     }, 0);
   };
+  var definitelyNg1 = !!ng12Hybrid;
+  var definitelyNg2OrNewer = false;
   var check = function(n) {
     try {
-      if (window.angular && window.angular.resumeBootstrap) {
-        callback([true, null]);
-      } else if (n < 1) {
-        if (window.angular) {
-          callback([false, 'angular never provided resumeBootstrap']);
+      /* Figure out which version of angular we're waiting on */
+      if (!definitelyNg1 && !definitelyNg2OrNewer) {
+        if (window.angular && !(window.angular.version && window.angular.version.major > 1)) {
+          definitelyNg1 = true;
+        } else if (window.getAllAngularTestabilities) {
+          definitelyNg2OrNewer = true;
+        }
+      }
+      /* See if our version of angular is ready */
+      if (definitelyNg1) {
+        if (window.angular && window.angular.resumeBootstrap) {
+          return callback({ver: 1});
+        }
+      } else if (definitelyNg2OrNewer) {
+        if (true /* ng2 has no resumeBootstrap() */) {
+          return callback({ver: 2});
+        }
+      }
+      /* Try again (or fail) */
+      if (n < 1) {
+        if (definitelyNg1 && window.angular) {
+          callback({message: 'angular never provided resumeBootstrap'});
+        } else if (ng12Hybrid && !window.angular) {
+          callback({message: 'angular 1 never loaded' +
+              window.getAllAngularTestabilities ? ' (are you sure this app ' +
+              'uses ngUpgrade?  Try un-setting ng12Hybrid)' : ''});
         } else {
-          callback([false, 'retries looking for angular exceeded']);
+          callback({message: 'retries looking for angular exceeded'});
         }
       } else {
         window.setTimeout(function() {check(n - 1);}, 1000);
       }
     } catch (e) {
-      callback([false, e]);
+      callback({message: e});
     }
   };
   check(attempts);
-}, evaluate: function (element, expression) {
+}, evaluate: function(element, expression) {
   return angular.element(element).scope().$eval(expression);
-}, allowAnimations: function (element, value) {
+}, allowAnimations: function(element, value) {
   var ngElement = angular.element(element);
   if (ngElement.allowAnimations) {
     // AngularDart: $testability API.
@@ -438,20 +754,103 @@ function repeaterMatch(ngRepeat, repeater, exact) {
     var enabledFn = ngElement.injector().get('$animate').enabled;
     return (value == null) ? enabledFn() : enabledFn(value);
   }
-}, getLocationAbsUrl: function (selector) {
-  var el = document.querySelector(selector);
-  if (angular.getTestability) {
-    return angular.getTestability(el).
-        getLocation();
+}, getLocationAbsUrl: function anonymous(
+) {
+function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
   }
-  return angular.element(el).injector().get('$location').absUrl();
-}, setLocation: function (selector, url) {
-  var el = document.querySelector(selector);
-  if (angular.getTestability) {
-    return angular.getTestability(el).
-        setLocation(url);
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
   }
-  var $injector = angular.element(el).injector();
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
+};  return (function(selector) {
+  var hooks = getNg1Hooks(selector);
+  if (angular.getTestability) {
+    return hooks.$$testability.getLocation();
+  }
+  return hooks.$injector.get('$location').absUrl();
+}).apply(this, arguments);
+}, setLocation: function anonymous(
+) {
+function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
+  }
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
+  }
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
+};  return (function(selector, url) {
+  var hooks = getNg1Hooks(selector);
+  if (angular.getTestability) {
+    return hooks.$$testability.setLocation(url);
+  }
+  var $injector = hooks.$injector;
   var $location = $injector.get('$location');
   var $rootScope = $injector.get('$rootScope');
 
@@ -459,9 +858,52 @@ function repeaterMatch(ngRepeat, repeater, exact) {
     $location.url(url);
     $rootScope.$digest();
   }
-}, getPendingHttpRequests: function (selector) {
-  var el = document.querySelector(selector);
-  var $injector = angular.element(el).injector();
-  var $http = $injector.get('$http');
+}).apply(this, arguments);
+}, getPendingHttpRequests: function anonymous(
+) {
+function getNg1Hooks(selector, injectorPlease) {
+  function tryEl(el) {
+    try {
+      if (!injectorPlease && angular.getTestability) {
+        var $$testability = angular.getTestability(el);
+        if ($$testability) {
+          return {$$testability: $$testability};
+        }
+      } else {
+        var $injector = angular.element(el).injector();
+        if ($injector) {
+          return {$injector: $injector};
+        }
+      }
+    } catch(err) {}
+  }
+  function trySelector(selector) {
+    var els = document.querySelectorAll(selector);
+    for (var i = 0; i < els.length; i++) {
+      var elHooks = tryEl(els[i]);
+      if (elHooks) {
+        return elHooks;
+      }
+    }
+  }
+
+  if (selector) {
+    return trySelector(selector);
+  } else if (window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__) {
+    var $injector = window.__TESTABILITY__NG1_APP_ROOT_INJECTOR__;
+    var $$testability = null;
+    try {
+      $$testability = $injector.get('$$testability');
+    } catch (e) {}
+    return {$injector: $injector, $$testability: $$testability};
+  } else {
+    return tryEl(document.body) ||
+        trySelector('[ng-app]') || trySelector('[ng\\:app]') ||
+        trySelector('[ng-controller]') || trySelector('[ng\\:controller]');
+  }
+};  return (function(selector) {
+  var hooks = getNg1Hooks(selector, true);
+  var $http = hooks.$injector.get('$http');
   return $http.pendingRequests;
+}).apply(this, arguments);
 }};

@@ -1,4 +1,4 @@
-try { return (function (element, value) {
+try { return (function(element, value) {
   var ngElement = angular.element(element);
   if (ngElement.allowAnimations) {
     // AngularDart: $testability API.

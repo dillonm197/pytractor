@@ -66,23 +66,24 @@ class WebDriverMixin(object):
     when a page continuously polls an API using $timeout.
     """  # docstring adapted from protractor.js
 
-    def __init__(self, base_url='', root_element='body', script_timeout=10,
+    def __init__(self, base_url='', root_element='body', ng12_hybrid=False, script_timeout=10,
                  test_timeout=10, *args, **kwargs):
         self._base_url = base_url
         self._root_element = root_element
         self._test_timeout = test_timeout
+        self._ng12_hybrid = ng12_hybrid
         super(WebDriverMixin, self).__init__(*args, **kwargs)
         self.set_script_timeout(script_timeout)
 
     def _execute_client_script(self, script_name, *args, **kwargs):
-        async = kwargs.pop('async', True)
+        use_async = kwargs.pop('use_async', True)
         file_name = '{}.js'.format(script_name)
         js_script = resource_string(__name__,
                                     '{}/{}'.format(CLIENT_SCRIPTS_DIR,
                                                    file_name))
         if js_script:
             js_script = js_script.decode('UTF-8')
-        if async:
+        if use_async:
             result = self.execute_async_script(js_script, *args)
         else:
             result = self.execute_script(js_script, *args)
@@ -94,7 +95,7 @@ class WebDriverMixin(object):
         else:
             return self._execute_client_script('waitForAngular',
                                                self._root_element,
-                                               async=True)
+                                               use_async=True)
 
     def execute(self, driver_command, params=None):
         # We also get called from WebElement methods/properties.
@@ -106,7 +107,7 @@ class WebDriverMixin(object):
 
     def _test_for_angular(self):
         return self._execute_client_script('testForAngular',
-                                           floor(self._test_timeout / 1000))
+                                           floor(self._test_timeout / 1000), self._ng12_hybrid, use_async=True)
 
     def _location_equals(self, location):
         result = self.execute_script('return window.location.href')
@@ -131,13 +132,13 @@ class WebDriverMixin(object):
     @angular_wait_required
     def location_abs_url(self):
         return self._execute_client_script('getLocationAbsUrl',
-                                           self._root_element, async=False)
+                                           self._root_element, use_async=False)
 
     @angular_wait_required
     def find_elements_by_repeater(self, descriptor, using=None):
         return self._execute_client_script('findAllRepeaterRows',
                                            descriptor, False, using,
-                                           async=False)
+                                           use_async=False)
 
     @angular_wait_required
     def find_element(self, *args, **kwargs):
@@ -150,7 +151,7 @@ class WebDriverMixin(object):
     @angular_wait_required
     def find_elements_by_binding(self, descriptor, using=None):
         elements = self._execute_client_script('findBindings', descriptor,
-                                               False, using, async=False)
+                                               False, using, use_async=False)
         return elements
 
     def find_element_by_binding(self, descriptor, using=None):
@@ -176,7 +177,7 @@ class WebDriverMixin(object):
     @angular_wait_required
     def find_elements_by_exact_binding(self, descriptor, using=None):
         elements = self._execute_client_script('findBindings', descriptor,
-                                               True, using, async=False)
+                                               True, using, use_async=False)
         return elements
 
     def find_element_by_model(self, descriptor, using=None):
@@ -192,7 +193,7 @@ class WebDriverMixin(object):
     @angular_wait_required
     def find_elements_by_model(self, descriptor, using=None):
         elements = self._execute_client_script('findByModel', descriptor,
-                                               using, async=False)
+                                               using, use_async=False)
         # Workaround for issue #10: findByModel.js returns None instead of empty
         # list if no element has been found.
         if elements is None:
@@ -213,18 +214,13 @@ class WebDriverMixin(object):
 
         if not self.ignore_synchronization:
             test_result = self._test_for_angular()
-            angular_on_page = test_result[0]
-            if not angular_on_page:
-                message = test_result[1]
+            if 'message' in test_result:
                 raise AngularNotFoundException(
-                    'Angular could not be found on page: {}:'
-                    ' {}'.format(full_url, message)
+                    "Angular could not be found on page: {}:"
+                    " {}".format(full_url, test_result['message'])
                 )
-            # TODO: inject scripts here
-            # return self.execute_script(
-            #     'angular.resumeBootstrap(arguments[0]);'
-            # )
-            self.execute_script('angular.resumeBootstrap();')
+            elif test_result['ver'] == 1:
+                self.execute_script("angular.resumeBootstrap();")
 
     def refresh(self):
         url = self.execute_script('return window.location.href')
@@ -233,5 +229,5 @@ class WebDriverMixin(object):
     @angular_wait_required
     def set_location(self, url):
         result = self._execute_client_script('setLocation', self._root_element,
-                                             url, async=False)
+                                             url, use_async=False)
         return result

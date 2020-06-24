@@ -1,4 +1,5 @@
-try { return (function anonymous() {
+try { return (function anonymous(
+) {
 function repeaterMatch(ngRepeat, repeater, exact) {
   if (exact) {
     return ngRepeat.split(' track by ')[0].split(' as ')[0].split('|')[0].
@@ -33,7 +34,7 @@ function repeaterMatch(ngRepeat, repeater, exact) {
         var elem = repeatElems[i];
         var row = [];
         while (elem.nodeType != 8 ||
-            !repeaterMatch(elem.nodeValue, repeater, exact)) {
+            !repeaterMatch(elem.nodeValue, repeater)) {
           if (elem.nodeType == 1) {
             row.push(elem);
           }
