@@ -27,10 +27,7 @@ class LocatorTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = TestDriver(
-            'http://localhost:{}/'.format(SimpleWebServerProcess.PORT),
-            'body'
-        )
+        cls.driver = TestDriver('http://localhost:{}/'.format(SimpleWebServerProcess.PORT), 'body')
 
     @classmethod
     def tearDownClass(cls):
@@ -42,7 +39,6 @@ class ByBindingLocatorTest(LocatorTestCase):
 
     def setUp(self):
         self.driver.get('index.html#/form')
-
 
     def test_find_element_by_binding_raises_error_if_no_element_matches(self):
         with self.assertRaises(NoSuchElementException):
@@ -112,8 +108,7 @@ class ByModelLocatorTest(LocatorTestCase):
         about.clear()
         about.send_keys('Something else to write about')
 
-        self.assertEqual(about.get_attribute('value'),
-                         'Something else to write about')
+        self.assertEqual(about.get_attribute('value'), 'Something else to write about')
 
     def test_find_elements_by_model_find_multiple_selects_by_model(self):
         selects = self.driver.find_elements_by_model('dayColor.color')
@@ -126,9 +121,7 @@ class ByModelLocatorTest(LocatorTestCase):
 
         self.assertEqual(selected_option.text, 'apple')
 
-    def test_find_element_by_model_finds_inputs_with_alternate_attribute_forms(
-        self
-    ):
+    def test_find_element_by_model_finds_inputs_with_alternate_attribute_forms(self):
         letter_list = self.driver.find_element_by_id('letterlist')
         self.assertEqual(letter_list.text, '')
 
@@ -170,6 +163,4 @@ class ByRepeaterTestCase(LocatorTestCase):
         self.assertEqual(element[4].text, 'F Friday')
 
     def test_find_elements_by_repeater_returns_empty_list(self):
-        self.assertFalse(
-            self.driver.find_elements_by_repeater('no-such in days')
-        )
+        self.assertFalse(self.driver.find_elements_by_repeater('no-such in days'))

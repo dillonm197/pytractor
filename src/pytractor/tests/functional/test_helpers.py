@@ -26,10 +26,7 @@ class HelperFunctionTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = TestDriver(
-            'http://localhost:{}/'.format(SimpleWebServerProcess.PORT),
-            'body'
-        )
+        cls.driver = TestDriver('http://localhost:{}/'.format(SimpleWebServerProcess.PORT), 'body')
 
     @classmethod
     def tearDownClass(cls):

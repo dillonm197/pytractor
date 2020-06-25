@@ -33,6 +33,7 @@ class TestServerHandler(http.server.SimpleHTTPRequestHandler):
     The handler for the web server. It has the same functionality as the
     server for protractor's test app.
     """
+
     def send_text_response(self, text):
         self.send_response(200)
         self.send_header("Content-type", 'text/plain')
@@ -56,16 +57,16 @@ class TestServerHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, msg_format, *args):
         """Use python logging to avoid lots of output during testing."""
-        logger.info("TESTSERVER: %s - - [%s] %s\n" %
-                    (self.client_address[0],
-                     self.log_date_time_string(),
-                     msg_format % args))
+        logger.info(
+            "TESTSERVER: %s - - [%s] %s\n" % (self.client_address[0], self.log_date_time_string(), msg_format % args)
+        )
 
 
 class SimpleWebServerProcess(object):
     """
     A simple webserver for serving pages for testing.
     """
+
     HOST = 'localhost'
     PORT = 9999
     APP_DIR = 'testapp'
@@ -76,16 +77,14 @@ class SimpleWebServerProcess(object):
         if self._pid == 0:
             self.start_server()
         else:
-            logger.debug('Started webserver child as pid {} on'
-                         ' port {}'.format(self._pid, self.PORT))
+            logger.debug('Started webserver child as pid {} on' ' port {}'.format(self._pid, self.PORT))
             # wait 5 seconds for server to start
             time.sleep(5)
 
     def start_server(self):
         module_path = __file__
         server_path = os.path.join(os.path.dirname(module_path), self.APP_DIR)
-        logger.debug('Starting webserver for path {} on'
-                     ' port {}'.format(server_path, self.PORT))
+        logger.debug('Starting webserver for path {} on' ' port {}'.format(server_path, self.PORT))
         os.chdir(server_path)
         handler = TestServerHandler
         socketserver.TCPServer.allow_reuse_address = True
@@ -94,10 +93,10 @@ class SimpleWebServerProcess(object):
 
     def stop(self):
         if self._pid != 0:
-            logger.debug('Sending SIGTERM to webserver child with'
-                         ' pid {}'.format(self._pid))
+            logger.debug('Sending SIGTERM to webserver child with' ' pid {}'.format(self._pid))
             os.kill(self._pid, signal.SIGTERM)
             os.waitpid(self._pid, 0)
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

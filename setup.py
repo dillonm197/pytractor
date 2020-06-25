@@ -31,49 +31,28 @@ with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
 
 setup(
     name='pytractor',
-
     version='0.2.2.dev1',
-
     description='Selenium testing for Angular.js apps',
     long_description=long_description,
-
     url='https://github.com/kpodl/pytractor',
-
     author='Konrad Podloucky',
     author_email='konrad+pytractor@crunchy-frog.org',
-
     license='Apache 2.0',
-
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         'Development Status :: 3 - Alpha',
-
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Testing',
-
         'License :: OSI Approved :: Apache Software License',
-
         'Programming Language :: Python :: 2.7',
     ],
-
     keywords='selenium angular.js testing',
-
     package_dir={'': 'src'},
-
     packages=find_packages('src'),
-
     # For package data see MANIFEST.in
     include_package_data=True,
-
-    install_requires=[
-        'selenium>=2.48.0',
-        'future>=0.15.2'
-    ],
-
-    tests_require=[
-        'nose>=1.3.7',
-        'mock>=1.3.0',
-    ],
+    install_requires=['selenium>=2.48.0', 'future>=0.15.2'],
+    tests_require=['nose>=1.3.7', 'mock>=1.3.0',],
     test_suite='nose.collector',
-    use_2to3=True
+    use_2to3=True,
 )

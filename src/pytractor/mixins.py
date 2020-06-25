@@ -44,7 +44,7 @@ COMMANDS_NEEDING_WAIT = [
     Command.IS_ELEMENT_SELECTED,
     Command.IS_ELEMENT_DISPLAYED,
     Command.SUBMIT_ELEMENT,
-    Command.CLEAR_ELEMENT
+    Command.CLEAR_ELEMENT,
 ]
 
 
@@ -53,11 +53,13 @@ def angular_wait_required(wrapped):
     def wait_for_angular(driver, *args, **kwargs):
         driver.wait_for_angular()
         return wrapped(driver, *args, **kwargs)
+
     return wait_for_angular
 
 
 class WebDriverMixin(object):
     """A mixin for Selenium Webdrivers."""
+
     ignore_synchronization = False
     """If True, pytractor will not attempt to synchronize with the page before
     performing actions. This can be harmful because pytractor will not wait
@@ -66,8 +68,9 @@ class WebDriverMixin(object):
     when a page continuously polls an API using $timeout.
     """  # docstring adapted from protractor.js
 
-    def __init__(self, base_url='', root_element='body', ng12_hybrid=False, script_timeout=10,
-                 test_timeout=10, *args, **kwargs):
+    def __init__(
+        self, base_url='', root_element='body', ng12_hybrid=False, script_timeout=10, test_timeout=10, *args, **kwargs
+    ):
         self._base_url = base_url
         self._root_element = root_element
         self._test_timeout = test_timeout
@@ -78,9 +81,7 @@ class WebDriverMixin(object):
     def _execute_client_script(self, script_name, *args, **kwargs):
         use_async = kwargs.pop('use_async', True)
         file_name = '{}.js'.format(script_name)
-        js_script = resource_string(__name__,
-                                    '{}/{}'.format(CLIENT_SCRIPTS_DIR,
-                                                   file_name))
+        js_script = resource_string(__name__, '{}/{}'.format(CLIENT_SCRIPTS_DIR, file_name))
         if js_script:
             js_script = js_script.decode('UTF-8')
         if use_async:
@@ -90,28 +91,25 @@ class WebDriverMixin(object):
         return result
 
     def wait_for_angular(self):
-        if self.ignore_synchronization:
-            return
-        else:
-            return self._execute_client_script('waitForAngular',
-                                               self._root_element,
-                                               use_async=True)
+        if not self.ignore_synchronization:
+            return self._execute_client_script('waitForAngular', self._root_element, use_async=True)
 
     def execute(self, driver_command, params=None):
         # We also get called from WebElement methods/properties.
         if driver_command in COMMANDS_NEEDING_WAIT:
-            self.wait_for_angular()
-
-        return super(WebDriverMixin, self).execute(driver_command,
-                                                   params=params)
+            self.wait_for_angular()  # Before execute.
+        result = super(WebDriverMixin, self).execute(driver_command, params=params)
+        if driver_command in COMMANDS_NEEDING_WAIT:
+            self.wait_for_angular()  # After execute.
+        return result
 
     def _test_for_angular(self):
-        return self._execute_client_script('testForAngular',
-                                           floor(self._test_timeout / 1000), self._ng12_hybrid, use_async=True)
+        return self._execute_client_script(
+            'testForAngular', floor(self._test_timeout / 1000), self._ng12_hybrid, use_async=True
+        )
 
     def _location_equals(self, location):
-        result = self.execute_script('return window.location.href')
-        return result == location
+        return self.execute_script('return window.location.href') == location
 
     @property
     @angular_wait_required
@@ -131,14 +129,11 @@ class WebDriverMixin(object):
     @property
     @angular_wait_required
     def location_abs_url(self):
-        return self._execute_client_script('getLocationAbsUrl',
-                                           self._root_element, use_async=False)
+        return self._execute_client_script('getLocationAbsUrl', self._root_element, use_async=False)
 
     @angular_wait_required
     def find_elements_by_repeater(self, descriptor, using=None):
-        return self._execute_client_script('findAllRepeaterRows',
-                                           descriptor, False, using,
-                                           use_async=False)
+        return self._execute_client_script('findAllRepeaterRows', descriptor, False, using, use_async=False)
 
     @angular_wait_required
     def find_element(self, *args, **kwargs):
@@ -150,50 +145,36 @@ class WebDriverMixin(object):
 
     @angular_wait_required
     def find_elements_by_binding(self, descriptor, using=None):
-        elements = self._execute_client_script('findBindings', descriptor,
-                                               False, using, use_async=False)
-        return elements
+        return self._execute_client_script('findBindings', descriptor, False, using, use_async=False)
 
     def find_element_by_binding(self, descriptor, using=None):
         elements = self.find_elements_by_binding(descriptor, using=using)
         if len(elements) == 0:
-            raise NoSuchElementException(
-                "No element found for binding descriptor"
-                " '{}'".format(descriptor)
-            )
+            raise NoSuchElementException("No element found for binding descriptor" " '{}'".format(descriptor))
         else:
             return elements[0]
 
     def find_element_by_exact_binding(self, descriptor, using=None):
         elements = self.find_elements_by_exact_binding(descriptor, using=using)
         if len(elements) == 0:
-            raise NoSuchElementException(
-                "No element found for binding descriptor"
-                " '{}'".format(descriptor)
-            )
+            raise NoSuchElementException("No element found for binding descriptor" " '{}'".format(descriptor))
         else:
             return elements[0]
 
     @angular_wait_required
     def find_elements_by_exact_binding(self, descriptor, using=None):
-        elements = self._execute_client_script('findBindings', descriptor,
-                                               True, using, use_async=False)
-        return elements
+        return self._execute_client_script('findBindings', descriptor, True, using, use_async=False)
 
     def find_element_by_model(self, descriptor, using=None):
         elements = self.find_elements_by_model(descriptor, using=using)
         if len(elements) == 0:
-            raise NoSuchElementException(
-                "No element found for model descriptor"
-                " {}".format(descriptor)
-            )
+            raise NoSuchElementException("No element found for model descriptor" " {}".format(descriptor))
         else:
             return elements[0]
 
     @angular_wait_required
     def find_elements_by_model(self, descriptor, using=None):
-        elements = self._execute_client_script('findByModel', descriptor,
-                                               using, use_async=False)
+        elements = self._execute_client_script('findByModel', descriptor, using, use_async=False)
         # Workaround for issue #10: findByModel.js returns None instead of empty
         # list if no element has been found.
         if elements is None:
@@ -201,23 +182,20 @@ class WebDriverMixin(object):
         return elements
 
     def get(self, url):
-        super(WebDriverMixin, self).get(urljoin(str(self._base_url), str(url)))
+        full_url = urljoin(str(self._base_url), str(url))
+        super(WebDriverMixin, self).get(full_url)
         if not self.ignore_synchronization:
             test_result = self._test_for_angular()
             if 'message' in test_result:
                 raise AngularNotFoundException(
-                    "Angular could not be found on page: {}:"
-                    " {}".format(full_url, test_result['message'])
+                    "Angular could not be found on page: {}:" " {}".format(full_url, test_result['message'])
                 )
             elif test_result['ver'] == 1:
                 self.execute_script("angular.resumeBootstrap();")
 
     def refresh(self):
-        url = self.execute_script('return window.location.href')
-        self.get(url)
+        self.get(self.execute_script('return window.location.href'))
 
     @angular_wait_required
     def set_location(self, url):
-        result = self._execute_client_script('setLocation', self._root_element,
-                                             url, use_async=False)
-        return result
+        return self._execute_client_script('setLocation', self._root_element, url, use_async=False)

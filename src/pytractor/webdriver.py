@@ -17,8 +17,19 @@ Selenium webdrivers with added angular.js awareness.
 """
 
 from selenium import webdriver as selenium_webdriver
-from selenium.webdriver import Android, BlackBerry, Chrome, Edge, Firefox, Ie, Opera, PhantomJS, Remote, Safari, \
-    WebKitGTK
+from selenium.webdriver import (
+    Android,
+    BlackBerry,
+    Chrome,
+    Edge,
+    Firefox,
+    Ie,
+    Opera,
+    PhantomJS,
+    Remote,
+    Safari,
+    WebKitGTK,
+)
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from .mixins import WebDriverMixin
@@ -68,14 +79,16 @@ class WebKitGTK(WebDriverMixin, WebKitGTK):
     pass
 
 
-__all__ = ['Android',
-           'BlackBerry',
-           'Chrome',
-           'Edge',
-           'Firefox',
-           'Ie',
-           'Opera',
-           'PhantomJS',
-           'Remote',
-           'Safari',
-           'WebKitGTK']
+__all__ = [
+    'Android',
+    'BlackBerry',
+    'Chrome',
+    'Edge',
+    'Firefox',
+    'Ie',
+    'Opera',
+    'PhantomJS',
+    'Remote',
+    'Safari',
+    'WebKitGTK',
+]

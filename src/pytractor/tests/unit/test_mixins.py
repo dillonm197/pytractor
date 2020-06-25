@@ -19,12 +19,12 @@ from mock import MagicMock, patch, PropertyMock, DEFAULT
 from selenium.common.exceptions import NoSuchElementException
 
 from pytractor.exceptions import AngularNotFoundException
-from pytractor.mixins import (WebDriverMixin, angular_wait_required,
-                              CLIENT_SCRIPTS_DIR)
+from pytractor.mixins import WebDriverMixin, angular_wait_required, CLIENT_SCRIPTS_DIR
 
 
 try:  # FIXME: find another way
     import __builtin__
+
     super_str = '__builtin__.super'
 except ImportError:
     super_str = 'builtins.super'
@@ -39,8 +39,7 @@ class AngularWaitRequiredDecoratorTest(unittest.TestCase):
         pass
 
     def test_angular_wait_required(self):
-        with patch.multiple(self, wait_for_angular=DEFAULT,
-                            check_function=DEFAULT, create=True) as patched:
+        with patch.multiple(self, wait_for_angular=DEFAULT, check_function=DEFAULT, create=True) as patched:
             mock_wait_for_angular = patched['wait_for_angular']
             mock_check_function = patched['check_function']
             mock_arg = MagicMock()
@@ -51,13 +50,13 @@ class AngularWaitRequiredDecoratorTest(unittest.TestCase):
         # wait_for_angular() should have been called
         mock_wait_for_angular.assert_called_once_with()
         # the check function should have been called
-        mock_check_function.assert_called_once_with(mock_arg,
-                                                    kwarg=mock_kwarg)
+        mock_check_function.assert_called_once_with(mock_arg, kwarg=mock_kwarg)
 
 
 class WebDriverMixinConstructorTest(unittest.TestCase):
     class ConstructorTester(object):
         """Class for checking calls to __init__"""
+
         def __init__(self, *args, **kwargs):
             self.constructor_called(*args, **kwargs)
 
@@ -77,14 +76,10 @@ class WebDriverMixinConstructorTest(unittest.TestCase):
         test_timeout = 'TESTTIMEOUT'
         script_timeout = 'SCRIPTTIMEOUT'
 
-        with patch.object(
-            self.ConstructorTester, 'constructor_called'
-        ) as mock_constructor_called, patch.object(
+        with patch.object(self.ConstructorTester, 'constructor_called') as mock_constructor_called, patch.object(
             self.TestDriver, 'set_script_timeout', create=True
         ) as mock_set_script_timeout:
-            instance = self.TestDriver(base_url, root_element,
-                                       test_timeout=test_timeout,
-                                       script_timeout=script_timeout)
+            instance = self.TestDriver(base_url, root_element, test_timeout=test_timeout, script_timeout=script_timeout)
 
         # verify that properties have been set
         self.assertIs(instance._base_url, base_url)
@@ -98,46 +93,35 @@ class WebDriverMixinConstructorTest(unittest.TestCase):
 
 class WebDriverMixinTest(unittest.TestCase):
     def setUp(self):
-        set_script_timeout_patcher = patch.object(
-            WebDriverMixin, 'set_script_timeout', create=True
-        )
+        set_script_timeout_patcher = patch.object(WebDriverMixin, 'set_script_timeout', create=True)
         self.mock_set_script_timeout = set_script_timeout_patcher.start()
         self.addCleanup(set_script_timeout_patcher.stop)
         self.mock_root_element = MagicMock()
-        self.instance = WebDriverMixin('http://localhost',
-                                       self.mock_root_element)
+        self.instance = WebDriverMixin('http://localhost', self.mock_root_element)
 
     @patch('pytractor.mixins.resource_string')
     def verify__execute_client_script_call(self, use_async, mock_resource_string):
         with patch.multiple(
-            self.instance,
-            execute_async_script=DEFAULT, execute_script=DEFAULT,
-            create=True
+            self.instance, execute_async_script=DEFAULT, execute_script=DEFAULT, create=True
         ) as mock_execute:
-            (mock_execute_script,
-             mock_execute_async_script) = [mock_execute.get(func_name)
-                                           for func_name in
-                                           ('execute_script',
-                                            'execute_async_script')]
+            (mock_execute_script, mock_execute_async_script) = [
+                mock_execute.get(func_name) for func_name in ('execute_script', 'execute_async_script')
+            ]
             mock_arg = MagicMock()
-            result = self.instance._execute_client_script('SCRIPT', mock_arg,
-                                                          use_async=use_async)
+            result = self.instance._execute_client_script('SCRIPT', mock_arg, use_async=use_async)
         # the script was read correctly with resource_string()
         mock_resource_string.assert_called_once_with(
-            'pytractor.mixins',
-            '{}/{}.js'.format(CLIENT_SCRIPTS_DIR, 'SCRIPT')
+            'pytractor.mixins', '{}/{}.js'.format(CLIENT_SCRIPTS_DIR, 'SCRIPT')
         )
         # execute_async_script or execute_script were called (but not both)
         script_content = mock_resource_string.return_value.decode()
         if use_async:
-            mock_execute_async_script.assert_called_once_with(script_content,
-                                                              mock_arg)
+            mock_execute_async_script.assert_called_once_with(script_content, mock_arg)
             self.assertEqual(len(mock_execute_script.mock_calls), 0)
             # the result is the one from execute_async_script()
             self.assertIs(result, mock_execute_async_script.return_value)
         else:
-            mock_execute_script.assert_called_once_with(script_content,
-                                                        mock_arg)
+            mock_execute_script.assert_called_once_with(script_content, mock_arg)
             self.assertEqual(len(mock_execute_async_script.mock_calls), 0)
             # the result is the one from execute_script()
             self.assertIs(result, mock_execute_script.return_value)
@@ -148,35 +132,23 @@ class WebDriverMixinTest(unittest.TestCase):
     def test__execute_client_script_sync(self):
         self.verify__execute_client_script_call(False)
 
-    def verify_function_executes_script_with(self, func_to_call,
-                                             script_name, *script_args,
-                                             **script_kwargs):
-        with patch.object(
-            self.instance, '_execute_client_script'
-        ) as mock_execute_client_script:
+    def verify_function_executes_script_with(self, func_to_call, script_name, *script_args, **script_kwargs):
+        with patch.object(self.instance, '_execute_client_script') as mock_execute_client_script:
             result = func_to_call()
-        mock_execute_client_script.assert_called_once_with(
-            script_name,
-            *script_args, **script_kwargs
-        )
+        mock_execute_client_script.assert_called_once_with(script_name, *script_args, **script_kwargs)
         self.assertIs(result, mock_execute_client_script.return_value)
 
     def test_wait_for_angular(self):
         self.verify_function_executes_script_with(
-            self.instance.wait_for_angular,
-            'waitForAngular', self.mock_root_element, use_async=True
+            self.instance.wait_for_angular, 'waitForAngular', self.mock_root_element, use_async=True
         )
 
-    def test_wait_for_angular_does_not_call_script_if_ignore_synchronization(
-        self
-    ):
+    def test_wait_for_angular_does_not_call_script_if_ignore_synchronization(self):
         """wait_for_angular() must not call the waitForAngular script, if
         ignore_synchronization is set to True."""
         self.instance.ignore_synchronization = True
 
-        with patch.object(
-            self.instance, '_execute_client_script'
-        ) as mock_execute_client_script:
+        with patch.object(self.instance, '_execute_client_script') as mock_execute_client_script:
 
             self.instance.wait_for_angular()
 
@@ -185,20 +157,15 @@ class WebDriverMixinTest(unittest.TestCase):
     def test__test_for_angular(self):
         self.instance._test_timeout = 5000
         self.verify_function_executes_script_with(
-            self.instance._test_for_angular,
-            'testForAngular', self.instance._test_timeout / 1000
+            self.instance._test_for_angular, 'testForAngular', self.instance._test_timeout / 1000
         )
 
     def test__location_equals(self):
-        with patch.object(
-            self.instance, 'execute_script', create=True
-        ) as mock_execute_script:
+        with patch.object(self.instance, 'execute_script', create=True) as mock_execute_script:
             mock_location = MagicMock()
             mock_execute_script.return_value = MagicMock(__eq__=MagicMock())
             result = self.instance._location_equals(mock_location)
-        mock_execute_script.assert_called_once_with(
-            'return window.location.href'
-        )
+        mock_execute_script.assert_called_once_with('return window.location.href')
         script_result = mock_execute_script.return_value
         script_result.__eq__.assert_called_once_with(mock_location)
         self.assertIs(result, script_result.__eq__.return_value)
@@ -210,11 +177,7 @@ class WebDriverMixinTest(unittest.TestCase):
         Verifies that accessing the given property calls the equally
         named property on the super class.
         """
-        with patch(
-                super_str
-        ) as mock_super, patch.object(
-            self.instance, 'wait_for_angular'
-        ) as mock_wait_for_angular:
+        with patch(super_str) as mock_super, patch.object(self.instance, 'wait_for_angular') as mock_wait_for_angular:
             # setup the mocked property
             mock_prop = PropertyMock(name='super.{}'.format(prop_name))
             setattr(type(mock_super.return_value), prop_name, mock_prop)
@@ -242,11 +205,7 @@ class WebDriverMixinTest(unittest.TestCase):
         named method on the super class.
         """
         mock_args = [MagicMock(), MagicMock()]
-        with patch(
-            super_str
-        ) as mock_super, patch.object(
-            self.instance, 'wait_for_angular'
-        ) as mock_wait_for_angular:
+        with patch(super_str) as mock_super, patch.object(self.instance, 'wait_for_angular') as mock_wait_for_angular:
             mock_super_method = getattr(mock_super.return_value, method_name)
             method = getattr(self.instance, method_name)
             result = method(*mock_args)
@@ -266,57 +225,39 @@ class WebDriverMixinTest(unittest.TestCase):
     def test_find_elements_by_binding(self):
         mock_descriptor = MagicMock()
         mock_using = MagicMock()
-        with patch.multiple(
-            self.instance, wait_for_angular=DEFAULT,
-            _execute_client_script=DEFAULT
-        ) as mock_methods:
-            result = self.instance.find_elements_by_binding(mock_descriptor,
-                                                            mock_using)
+        with patch.multiple(self.instance, wait_for_angular=DEFAULT, _execute_client_script=DEFAULT) as mock_methods:
+            result = self.instance.find_elements_by_binding(mock_descriptor, mock_using)
         mock_methods['wait_for_angular'].assert_called_once_with()
         mock_methods['_execute_client_script'].assert_called_once_with(
             'findBindings', mock_descriptor, False, mock_using, use_async=False
         )
-        self.assertIs(result,
-                      mock_methods['_execute_client_script'].return_value)
+        self.assertIs(result, mock_methods['_execute_client_script'].return_value)
 
     def test_find_element_by_binding_no_element(self):
         mock_descriptor = MagicMock()
         mock_using = MagicMock()
-        with patch.object(
-            self.instance, 'find_elements_by_binding'
-        ) as mock_find_elements_by_binding:
+        with patch.object(self.instance, 'find_elements_by_binding') as mock_find_elements_by_binding:
             mock_find_elements_by_binding.return_value = []
             with self.assertRaises(NoSuchElementException):
-                self.instance.find_element_by_binding(mock_descriptor,
-                                                      mock_using)
-        mock_find_elements_by_binding.assert_called_once_with(
-            mock_descriptor, using=mock_using
-        )
+                self.instance.find_element_by_binding(mock_descriptor, mock_using)
+        mock_find_elements_by_binding.assert_called_once_with(mock_descriptor, using=mock_using)
 
     def test_find_element_by_binding_with_element(self):
         mock_descriptor = MagicMock()
         mock_using = MagicMock()
         mock_element = MagicMock()
-        with patch.object(
-            self.instance, 'find_elements_by_binding'
-        ) as mock_find_elements_by_binding:
+        with patch.object(self.instance, 'find_elements_by_binding') as mock_find_elements_by_binding:
             mock_find_elements_by_binding.return_value = [mock_element]
-            result = self.instance.find_element_by_binding(mock_descriptor,
-                                                           mock_using)
-        mock_find_elements_by_binding.assert_called_once_with(
-            mock_descriptor, using=mock_using
-        )
+            result = self.instance.find_element_by_binding(mock_descriptor, mock_using)
+        mock_find_elements_by_binding.assert_called_once_with(mock_descriptor, using=mock_using)
         self.assertIs(result, mock_element)
 
     def test_get_with_angular(self):
         mock_url = MagicMock()
-        with patch(
-            super_str
-        ) as mock_super, patch(
+        with patch(super_str) as mock_super, patch(
             'pytractor.mixins.WebDriverWait'
         ) as mock_webdriverwait_class, patch.multiple(
-            self.instance, _test_for_angular=DEFAULT, execute_script=DEFAULT,
-            create=True  # needed for execute_script
+            self.instance, _test_for_angular=DEFAULT, execute_script=DEFAULT, create=True  # needed for execute_script
         ) as mock_methods:
             mock_test_for_angular = mock_methods['_test_for_angular']
             # return a truthy value to indicate that angular was found
@@ -327,23 +268,17 @@ class WebDriverMixinTest(unittest.TestCase):
         mock_super.assert_called_once_with(WebDriverMixin, self.instance)
         mock_super.return_value.get.assert_called_once_with('about:blank')
         self.assertEqual(len(mock_execute_script.mock_calls), 2)
-        mock_webdriverwait_class.assert_called_once_with(self.instance,
-                                                         10)
+        mock_webdriverwait_class.assert_called_once_with(self.instance, 10)
         mock_webdriverwait_instance = mock_webdriverwait_class.return_value
-        mock_webdriverwait_instance.until_not.assert_called_once_with(
-            self.instance._location_equals, 'about:blank'
-        )
+        mock_webdriverwait_instance.until_not.assert_called_once_with(self.instance._location_equals, 'about:blank')
         mock_test_for_angular.assert_called_once_with()
 
     def test_get_without_angular(self):
         mock_url = MagicMock()
-        with patch(
-            super_str
-        ) as mock_super, patch(
+        with patch(super_str) as mock_super, patch(
             'pytractor.mixins.WebDriverWait'
         ) as mock_webdriverwait_class, patch.multiple(
-            self.instance, _test_for_angular=DEFAULT, execute_script=DEFAULT,
-            create=True  # needed for execute_script
+            self.instance, _test_for_angular=DEFAULT, execute_script=DEFAULT, create=True  # needed for execute_script
         ) as mock_methods:
             mock_test_for_angular = mock_methods['_test_for_angular']
             # return a falsy value to indicate that angular was not found
@@ -355,27 +290,19 @@ class WebDriverMixinTest(unittest.TestCase):
         mock_super.assert_called_once_with(WebDriverMixin, self.instance)
         mock_super.return_value.get.assert_called_once_with('about:blank')
         self.assertEqual(len(mock_execute_script.mock_calls), 1)
-        mock_webdriverwait_class.assert_called_once_with(self.instance,
-                                                         10)
+        mock_webdriverwait_class.assert_called_once_with(self.instance, 10)
         mock_webdriverwait_instance = mock_webdriverwait_class.return_value
-        mock_webdriverwait_instance.until_not.assert_called_once_with(
-            self.instance._location_equals, 'about:blank'
-        )
+        mock_webdriverwait_instance.until_not.assert_called_once_with(self.instance._location_equals, 'about:blank')
         mock_test_for_angular.assert_called_once_with()
 
-    def test_get_does_not_test_for_angular_if_ignore_synchronization_is_true(
-        self
-    ):
+    def test_get_does_not_test_for_angular_if_ignore_synchronization_is_true(self):
         """Verify that get() does not call _test_for_angular if
         ignore_synchronization is set to True."""
         mock_url = MagicMock()
-        with patch(
-            super_str
-        ) as mock_super, patch(
+        with patch(super_str) as mock_super, patch(
             'pytractor.mixins.WebDriverWait'
         ) as mock_webdriverwait_class, patch.multiple(
-            self.instance, _test_for_angular=DEFAULT, execute_script=DEFAULT,
-            create=True  # needed for execute_script
+            self.instance, _test_for_angular=DEFAULT, execute_script=DEFAULT, create=True  # needed for execute_script
         ) as mock_methods:
             mock_test_for_angular = mock_methods['_test_for_angular']
 
@@ -386,12 +313,10 @@ class WebDriverMixinTest(unittest.TestCase):
 
     def test_refresh(self):
         with patch.multiple(
-            self.instance, get=DEFAULT, execute_script=DEFAULT,
-            create=True  # needed for execute_script()
+            self.instance, get=DEFAULT, execute_script=DEFAULT, create=True  # needed for execute_script()
         ) as mock_methods:
             self.instance.refresh()
-        mock_execute_script, mock_get = (mock_methods['execute_script'],
-                                         mock_methods['get'])
+        mock_execute_script, mock_get = (mock_methods['execute_script'], mock_methods['get'])
         self.assertEqual(mock_execute_script.call_count, 1)
         mock_get.assert_called_once_with(mock_execute_script.return_value)
 
@@ -400,15 +325,10 @@ class WebDriverMixinTest(unittest.TestCase):
         mock_using = MagicMock()
         mock_element = MagicMock()
         with patch.object(
-            self.instance, 'find_elements_by_exact_binding',
-            return_value=[mock_element]
+            self.instance, 'find_elements_by_exact_binding', return_value=[mock_element]
         ) as mock_find_elements_by_exact_binding:
-            result = self.instance.find_element_by_exact_binding(
-                mock_descriptor, mock_using
-            )
-        mock_find_elements_by_exact_binding.assert_called_once_with(
-            mock_descriptor, using=mock_using
-        )
+            result = self.instance.find_element_by_exact_binding(mock_descriptor, mock_using)
+        mock_find_elements_by_exact_binding.assert_called_once_with(mock_descriptor, using=mock_using)
         self.assertIs(result, mock_element)
 
     def test_find_element_by_exact_binding_raises_error_if_nothing_found(self):
@@ -418,118 +338,79 @@ class WebDriverMixinTest(unittest.TestCase):
             self.instance, 'find_elements_by_exact_binding', return_value=[]
         ) as mock_find_elements_by_exact_binding:
             with self.assertRaises(NoSuchElementException):
-                self.instance.find_element_by_exact_binding(
-                    mock_descriptor, mock_using
-                )
-        mock_find_elements_by_exact_binding.assert_called_once_with(
-            mock_descriptor, using=mock_using
-        )
+                self.instance.find_element_by_exact_binding(mock_descriptor, mock_using)
+        mock_find_elements_by_exact_binding.assert_called_once_with(mock_descriptor, using=mock_using)
 
     def test_find_elements_by_exact_binding_calls_protractor_script(self):
         mock_descriptor = MagicMock()
         mock_using = MagicMock()
 
-        with patch.multiple(
-            self.instance, wait_for_angular=DEFAULT,
-            _execute_client_script=DEFAULT
-        ) as mock_methods:
-            result = self.instance.find_elements_by_exact_binding(
-                mock_descriptor, mock_using
-            )
+        with patch.multiple(self.instance, wait_for_angular=DEFAULT, _execute_client_script=DEFAULT) as mock_methods:
+            result = self.instance.find_elements_by_exact_binding(mock_descriptor, mock_using)
 
         mock_methods['wait_for_angular'].assert_called_once_with()
         mock_methods['_execute_client_script'].assert_called_once_with(
             'findBindings', mock_descriptor, True, mock_using, use_async=False
         )
-        self.assertIs(result,
-                      mock_methods['_execute_client_script'].return_value)
+        self.assertIs(result, mock_methods['_execute_client_script'].return_value)
 
     def test_find_element_by_model_calls_find_elements(self):
         mock_descriptor = MagicMock()
         mock_using = MagicMock()
-        with patch.object(
-            self.instance, 'find_elements_by_model', return_value=[]
-        ) as mock_find_elements_by_model:
+        with patch.object(self.instance, 'find_elements_by_model', return_value=[]) as mock_find_elements_by_model:
             with self.assertRaises(NoSuchElementException):
-                self.instance.find_element_by_model(
-                    mock_descriptor, mock_using
-                )
-        mock_find_elements_by_model.assert_called_once_with(
-            mock_descriptor, using=mock_using
-        )
+                self.instance.find_element_by_model(mock_descriptor, mock_using)
+        mock_find_elements_by_model.assert_called_once_with(mock_descriptor, using=mock_using)
 
     def test_find_element_by_model_raises_error_if_nothing_found(self):
         mock_descriptor = MagicMock()
         mock_using = MagicMock()
-        with patch.object(
-            self.instance, 'find_elements_by_model', return_value=[]
-        ) as mock_find_elements_by_model:
+        with patch.object(self.instance, 'find_elements_by_model', return_value=[]) as mock_find_elements_by_model:
             with self.assertRaises(NoSuchElementException):
-                self.instance.find_element_by_model(
-                    mock_descriptor, mock_using
-                )
-        mock_find_elements_by_model.assert_called_once_with(
-            mock_descriptor, using=mock_using
-        )
+                self.instance.find_element_by_model(mock_descriptor, mock_using)
+        mock_find_elements_by_model.assert_called_once_with(mock_descriptor, using=mock_using)
 
     def test_find_elements_by_model_calls_protractor_script(self):
         mock_descriptor = MagicMock()
         mock_using = MagicMock()
 
-        with patch.multiple(
-            self.instance, wait_for_angular=DEFAULT,
-            _execute_client_script=DEFAULT
-        ) as mock_methods:
-            result = self.instance.find_elements_by_model(
-                mock_descriptor, mock_using
-            )
+        with patch.multiple(self.instance, wait_for_angular=DEFAULT, _execute_client_script=DEFAULT) as mock_methods:
+            result = self.instance.find_elements_by_model(mock_descriptor, mock_using)
 
         mock_methods['wait_for_angular'].assert_called_once_with()
         mock_methods['_execute_client_script'].assert_called_once_with(
             'findByModel', mock_descriptor, mock_using, use_async=False
         )
-        self.assertIs(result,
-                      mock_methods['_execute_client_script'].return_value)
+        self.assertIs(result, mock_methods['_execute_client_script'].return_value)
 
-    def test_find_elements_by_model_returns_empty_list_if_script_returns_none(
-        self
-    ):
+    def test_find_elements_by_model_returns_empty_list_if_script_returns_none(self):
         """Verify that find_elements_by_model() returns an empty list if
         the protractor script returns None.
         This is a test for issue #10
         """
-        with patch.object(self.instance, '_execute_client_script',
-                          return_value=None):
+        with patch.object(self.instance, '_execute_client_script', return_value=None):
             result = self.instance.find_elements_by_model('does-not-exist')
 
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 0)
 
     def test_location_abs_url_calls_protractor_script(self):
-        with patch.multiple(
-            self.instance, wait_for_angular=DEFAULT,
-            _execute_client_script=DEFAULT
-        ) as mock_methods:
+        with patch.multiple(self.instance, wait_for_angular=DEFAULT, _execute_client_script=DEFAULT) as mock_methods:
             result = self.instance.location_abs_url
 
         mock_methods['wait_for_angular'].assert_called_once_with()
         mock_methods['_execute_client_script'].assert_called_once_with(
             'getLocationAbsUrl', self.instance._root_element, use_async=False
         )
-        self.assertIs(result,
-                      mock_methods['_execute_client_script'].return_value)
+        self.assertIs(result, mock_methods['_execute_client_script'].return_value)
 
     def test_set_location_calls_protractor_script(self):
         url = 'http://a.new.locat.ion/'
-        with patch.multiple(
-            self.instance, wait_for_angular=DEFAULT,
-            _execute_client_script=DEFAULT
-        ) as mock_methods:
+        with patch.multiple(self.instance, wait_for_angular=DEFAULT, _execute_client_script=DEFAULT) as mock_methods:
             result = self.instance.set_location(url)
 
         mock_methods['wait_for_angular'].assert_called_once_with()
         mock_methods['_execute_client_script'].assert_called_once_with(
             'setLocation', self.instance._root_element, url, use_async=False
         )
-        self.assertIs(result,
-                      mock_methods['_execute_client_script'].return_value)
+        self.assertIs(result, mock_methods['_execute_client_script'].return_value)

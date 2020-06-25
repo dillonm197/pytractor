@@ -22,19 +22,16 @@ from selenium.webdriver.remote.webelement import WebElement
 
 # pylint: disable=no-name-in-module
 from pytractor.webdriver import Firefox, Chrome
+
 # pylint: enable=no-name-in-module
 
 from . import SimpleWebServerProcess
 
 
 class WebDriverTestBase(object):
-
     @classmethod
     def setUpClass(cls):
-        cls.driver = cls.driver_class(
-            'http://localhost:{}/'.format(SimpleWebServerProcess.PORT),
-            'body'
-        )
+        cls.driver = cls.driver_class('http://localhost:{}/'.format(SimpleWebServerProcess.PORT), 'body')
 
     @classmethod
     def tearDownClass(cls):

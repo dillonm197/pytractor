@@ -23,4 +23,5 @@ from pytractor.mixins import WebDriverMixin
 
 class TestDriver(WebDriverMixin, webdriver.Firefox):
     """We use the Firefox driver with our mixin for these tests."""
+
     pass
